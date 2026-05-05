@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+// import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import API_BASE_URL from "../apiroute/apiConfig";
 
@@ -13,23 +14,41 @@ const Users = () => {
 
   const API = `${API_BASE_URL}/api/AdminAPI`;
 
-  const loadUsers = async () => {
-    try {
-      const token = sessionStorage.getItem("token");
+  // const loadUsers = async () => {
+  //   try {
+  //     const token = sessionStorage.getItem("token");
 
-      const res = await axios.get(`${API}/Users`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+  //     const res = await axios.get(`${API}/Users`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`
+  //       }
+  //     });
 
-      setUsers(res.data);
-    } catch (err) {
-      console.error("Failed to load users", err.response || err);
-    }
-  };
+  //     setUsers(res.data);
+  //   } catch (err) {
+  //     console.error("Failed to load users", err.response || err);
+  //   }
+  // };
+  const loadUsers = useCallback(async () => {
+  try {
+    const token = sessionStorage.getItem("token");
 
-  useEffect(() => { loadUsers(); }, []);
+    const res = await axios.get(`${API}/Users`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    setUsers(res.data);
+  } catch (err) {
+    console.error("Failed to load users", err.response || err);
+  }
+}, [API]);
+
+  // useEffect(() => { loadUsers(); }, []);
+  useEffect(() => {
+  loadUsers();
+}, [loadUsers]);
 
   // Activate user
   const activateUser = async (id) => {

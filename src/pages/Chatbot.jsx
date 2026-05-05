@@ -348,12 +348,18 @@ const Chatbot = () => {
   const resultsRef = useRef(null);
 
   // Typing animation for the placeholder
-  const placeholders = [
-    "Ask me anything about your documents...",
-    "Search across all your PDFs...",
-    "What would you like to know?",
-    "Type your question here..."
-  ];
+  // const placeholders = [
+  //   "Ask me anything about your documents...",
+  //   "Search across all your PDFs...",
+  //   "What would you like to know?",
+  //   "Type your question here..."
+  // ];
+  const placeholders = React.useMemo(() => [
+  "Ask me anything about your documents...",
+  "Search across all your PDFs...",
+  "What would you like to know?",
+  "Type your question here..."
+], []);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [placeholder, setPlaceholder] = useState("");
   const [charIdx, setCharIdx] = useState(0);
@@ -438,29 +444,52 @@ const Chatbot = () => {
     return groups;
   }, [chatHistory]);
 
+  // useEffect(() => {
+  //   const current = placeholders[placeholderIdx];
+  //   let timeout;
+
+  //   if (!isDeleting && charIdx <= current.length) {
+  //     timeout = setTimeout(() => {
+  //       setPlaceholder(current.slice(0, charIdx));
+  //       setCharIdx(charIdx + 1);
+  //     }, 50);
+  //   } else if (!isDeleting && charIdx > current.length) {
+  //     timeout = setTimeout(() => setIsDeleting(true), 2000);
+  //   } else if (isDeleting && charIdx > 0) {
+  //     timeout = setTimeout(() => {
+  //       setPlaceholder(current.slice(0, charIdx - 1));
+  //       setCharIdx(charIdx - 1);
+  //     }, 30);
+  //   } else if (isDeleting && charIdx === 0) {
+  //     setIsDeleting(false);
+  //     setPlaceholderIdx((placeholderIdx + 1) % placeholders.length);
+  //   }
+
+  //   return () => clearTimeout(timeout);
+  // }, [charIdx, isDeleting, placeholderIdx]);
   useEffect(() => {
-    const current = placeholders[placeholderIdx];
-    let timeout;
+  const current = placeholders[placeholderIdx];
+  let timeout;
 
-    if (!isDeleting && charIdx <= current.length) {
-      timeout = setTimeout(() => {
-        setPlaceholder(current.slice(0, charIdx));
-        setCharIdx(charIdx + 1);
-      }, 50);
-    } else if (!isDeleting && charIdx > current.length) {
-      timeout = setTimeout(() => setIsDeleting(true), 2000);
-    } else if (isDeleting && charIdx > 0) {
-      timeout = setTimeout(() => {
-        setPlaceholder(current.slice(0, charIdx - 1));
-        setCharIdx(charIdx - 1);
-      }, 30);
-    } else if (isDeleting && charIdx === 0) {
-      setIsDeleting(false);
-      setPlaceholderIdx((placeholderIdx + 1) % placeholders.length);
-    }
+  if (!isDeleting && charIdx <= current.length) {
+    timeout = setTimeout(() => {
+      setPlaceholder(current.slice(0, charIdx));
+      setCharIdx(charIdx + 1);
+    }, 50);
+  } else if (!isDeleting && charIdx > current.length) {
+    timeout = setTimeout(() => setIsDeleting(true), 2000);
+  } else if (isDeleting && charIdx > 0) {
+    timeout = setTimeout(() => {
+      setPlaceholder(current.slice(0, charIdx - 1));
+      setCharIdx(charIdx - 1);
+    }, 30);
+  } else if (isDeleting && charIdx === 0) {
+    setIsDeleting(false);
+    setPlaceholderIdx((placeholderIdx + 1) % placeholders.length);
+  }
 
-    return () => clearTimeout(timeout);
-  }, [charIdx, isDeleting, placeholderIdx]);
+  return () => clearTimeout(timeout);
+}, [charIdx, isDeleting, placeholderIdx, placeholders]);
 
   const ask = async (e) => {
     e?.preventDefault();
@@ -715,13 +744,13 @@ const Chatbot = () => {
                   <div className="chatbot-input-hint" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>Press Enter to send, Shift+Enter for new line</span>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', pointerEvents: 'auto' }}>
-                      {/* <input
+                      <input
                         type="checkbox"
                         checked={includeHistory}
                         onChange={(e) => setIncludeHistory(e.target.checked)}
                         disabled={loading}
                       />
-                      Include Conversation Context */}
+                      Include Conversation Context
                     </label>
                   </div>
                 </div>
