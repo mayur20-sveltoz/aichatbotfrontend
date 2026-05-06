@@ -9,8 +9,19 @@ import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import '@react-pdf-viewer/highlight/lib/styles/index.css';
 
 
-const ResultCard = ({ r, i, isTyping, typingText, question, isExpanded, onToggle }) => {
-  const [activePage, setActivePage] = useState(r.pages?.[0] || 1);
+const ResultCard = ({ r, i, isTyping, typingText }) => {
+  const pageNumber = React.useMemo(() => {
+    if (Array.isArray(r.pages) && r.pages.length > 0) return r.pages[0];
+    if (Array.isArray(r.Pages) && r.Pages.length > 0) return r.Pages[0];
+    if (typeof r.pages === 'number') return r.pages;
+    if (typeof r.Pages === 'number') return r.Pages;
+    if (typeof r.page === 'number') return r.page;
+    if (typeof r.Page === 'number') return r.Page;
+    if (typeof r.pages === 'string' && r.pages.trim()) return Number(r.pages) || 1;
+    if (typeof r.Pages === 'string' && r.Pages.trim()) return Number(r.Pages) || 1;
+    return 1;
+  }, [r.pages, r.Pages, r.page, r.Page]);
+  const activePage = pageNumber || 1;
   const [showPdf, setShowPdf] = useState(false);
 
   const [highlightAreas, setHighlightAreas] = useState([]);
@@ -21,35 +32,23 @@ const ResultCard = ({ r, i, isTyping, typingText, question, isExpanded, onToggle
     return text.toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim();
   };
 
-  // 1. & 2. Split the answer into meaningful chunks (sentences or 8–12 word groups)
+  // 1. & 2. Split the answer into meaningful chunks (sentences)
   const answerChunks = React.useMemo(() => {
     if (!r.summary) return [];
     let cleanAnswer = r.summary.replace(/\n/g, " ").replace(/(?:Answer:|Steps:|Source:.*|Page.*|\d+\.\s*|[-*]\s*)/gi, ' ');
-    let sentences = cleanAnswer.split(/[.?!,;:]+\s+/);
-    let chunks = [];
-
-    sentences.forEach(s => {
-      const words = normalize(s).split(' ').filter(Boolean);
-      if (words.length >= 4) { // ignore very small chunks
-        if (words.length <= 12) {
-          chunks.push(words.join(' '));
-        } else {
-          // overlapping 8-12 word groups
-          for (let i = 0; i < words.length; i += 8) {
-            let chunk = words.slice(i, i + 12).join(' ');
-            if (chunk.split(' ').length >= 4) {
-              chunks.push(chunk);
-            }
-          }
-        }
-      }
+    let sentences = cleanAnswer.split(/[.?!,;:]+\s+/).filter(s => {
+      const trimmed = s.trim();
+      return trimmed.length > 10 && trimmed.split(' ').length >= 3; // meaningful sentences
     });
+    return sentences;
+  }, [r.summary]);
 
-    if (chunks.length === 0 && question) {
-      chunks = [normalize(question)];
-    }
-    return chunks;
-  }, [r.summary, question]);
+  const displayedSummary = React.useMemo(() => {
+    const rawSummary = r.summary || r.Summary || "";
+    // Commented out left-side source/file name logic in the answer body
+    // because source is now rendered in its own inline footer.
+    return rawSummary.replace(/Source:\s*[\s\S]*$/i, '').trim();
+  }, [r.summary, r.Summary]);
 
   // const highlightPluginInstance = highlightPlugin({
   //   renderHighlights: (props) => {
@@ -192,7 +191,16 @@ const ResultCard = ({ r, i, isTyping, typingText, question, isExpanded, onToggle
 
       //   return prev;
       // });
-      const targetPages = (r.pages || r.Pages || []).map(p => p - 1);
+      const pageValues = Array.isArray(r.pages)
+        ? r.pages
+        : Array.isArray(r.Pages)
+        ? r.Pages
+        : [r.pages || r.Pages || r.page || r.Page];
+      const targetPages = pageValues
+        .filter(Boolean)
+        .map((p) => Number(p))
+        .filter((p) => !Number.isNaN(p))
+        .map((p) => p - 1);
 
       setHighlightAreas(prev => {
         // Only process result pages
@@ -224,128 +232,76 @@ const ResultCard = ({ r, i, isTyping, typingText, question, isExpanded, onToggle
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
   return (
-    <div className={`chatbot-result-card ${isExpanded ? "expanded" : ""}`}>
-      <div className="chatbot-result-header" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', paddingRight: '0.25rem' }}>
-        <div className="chatbot-result-file">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-          <span>{r.fileName || r.FileName}</span>
+    <div className="chatbot-result-card">
+      <div className="chatbot-result-card-header">
+        <div className="chatbot-result-label">
+          <span>Answer</span>
         </div>
 
-        {isExpanded && (r.pages || r.Pages)?.length > 0 && (
-          <div className="chatbot-result-pages">
-            <span className="mr-2">Pages:</span>
-            <div className="flex gap-1" style={{ display: 'flex', gap: '0.25rem' }}>
-              {(r.pages || r.Pages)?.map((p) => (
-                <button
-                  key={p}
-                  className={`chatbot-page-num ${activePage === p ? "chatbot-page-num-active" : ""}`}
-                  onClick={() => setActivePage(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {r.avgScore !== undefined && (
-          <div className="chatbot-result-score" style={{ marginLeft: "auto", fontSize: "0.875rem", fontWeight: "600", color: "#6b7280" }}>
+          <div className="chatbot-score-badge">
             Score: {(r.avgScore * 100).toFixed(0)}%
           </div>
         )}
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: r.avgScore === undefined ? 'auto' : '0' }}>
-          {isExpanded && (
+      <div className="chatbot-result-summary" style={{ marginTop: '1rem', whiteSpace: 'pre-line' }}>
+        {i === 0 && isTyping ? (
+          <span className="chatbot-typing-text">
+            {typingText}
+            <span className="chatbot-cursor">|</span>
+          </span>
+        ) : (
+          displayedSummary || "No answer available"
+        )}
+      </div>
+
+      {(r.pages || r.Pages || r.fileName || r.FileName) && (
+        <div className="chatbot-result-source">
+          <span className="chatbot-result-source-label"></span>
+          <span className="chatbot-result-source-text">
+            Source: Page {activePage} | PDF file: {r.fileName || r.FileName}
             <button
-              className="chatbot-pdf-toggle"
+              className="chatbot-source-view-icon"
               onClick={() => setShowPdf(!showPdf)}
+              aria-label="View PDF"
             >
-              {showPdf ? "▼ Hide PDF" : "▶ View PDF"}
+              &gt;
             </button>
-          )}
-
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggle(); }}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              padding: "0.25rem", color: "#4b5563", borderRadius: "50%"
-            }}
-            title={isExpanded ? "Collapse" : "Expand"}
-          >
-            <svg
-              width="24" height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}
-            >
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+          </span>
         </div>
-      </div>
+      )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateRows: isExpanded ? "1fr" : "0fr",
-          transition: "grid-template-rows 0.3s ease-in-out"
-        }}
-      >
-        <div style={{ overflow: "hidden", minHeight: 0 }}>
-          <div style={{ opacity: isExpanded ? 1 : 0, transition: "opacity 0.3s ease-in-out" }}>
-            <div className="chatbot-result-summary" style={{ marginTop: isExpanded ? '1rem' : 0 }}>
-              {i === 0 && isTyping ? (
-                <span className="chatbot-typing-text">
-                  {typingText}
-                  <span className="chatbot-cursor">|</span>
-                </span>
-              ) : (
-                <div style={{ whiteSpace: "pre-line" }}>
-                  {r.summary || r.Summary || "No answer available"}
-                </div>
-              )}
-            </div>
-            {showPdf && r.fileName && (
-              <div className="chatbot-result-pdf" style={{ height: '600px', border: '1px solid #ccc', marginTop: '1rem' }}>
-                <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                  <Viewer
-                    key={`${r.fileName}-${activePage}`}
-                    fileUrl={getPdf(r.fileName)}
-                    plugins={[defaultLayoutPluginInstance, highlightPluginInstance, textExtractionPlugin]}
-                    initialPage={activePage > 0 ? activePage - 1 : 0}
-                  />
-                </Worker>
-              </div>
-            )}
-          </div>
+      {showPdf && (r.fileName || r.FileName) && (
+        <div className="chatbot-result-pdf" style={{ maxHeight: '420px', height: '420px', overflow: 'hidden', border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: '18px', marginTop: '1rem' }}>
+          <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
+            <Viewer
+              key={`${r.fileName || r.FileName}-${activePage}`}
+              fileUrl={getPdf(r.fileName || r.FileName)}
+              plugins={[defaultLayoutPluginInstance, highlightPluginInstance, textExtractionPlugin]}
+              initialPage={activePage > 0 ? activePage - 1 : 0}
+            />
+          </Worker>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 const Chatbot = () => {
   const [question, setQuestion] = useState("");
-  const [submittedQuestion, setSubmittedQuestion] = useState("");
-  const [results, setResults] = useState([]);
-  const [expandedResultIdx, setExpandedResultIdx] = useState(0);
+  const [conversation, setConversation] = useState([]);
   const [loading, setLoading] = useState(false);
   const [typingText, setTypingText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showQuestionPanel, setShowQuestionPanel] = useState(true);
-  const [showResultsPanel, setShowResultsPanel] = useState(true);
   const [sessionId, setSessionId] = useState(sessionStorage.getItem("chatSessionId") || "");
   const [includeHistory, setIncludeHistory] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
+  //const [chatHistory, setChatHistory] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const inputRef = useRef(null);
-  const resultsRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   // Typing animation for the placeholder
   // const placeholders = [
@@ -392,15 +348,17 @@ const Chatbot = () => {
 
       console.log("History API Response:", data); // debug
 
-      setChatHistory(
-        Array.isArray(data)
-          ? data
-          : (data.messages || data.history || data.results || [])
-      );
+      // setChatHistory(
+      //   Array.isArray(data)
+      //     ? data
+      //     : (data.messages || data.history || data.results || [])
+      // );
+      setSessions(data.sessions || []);
 
     } catch (err) {
       console.error("Failed to load chat history", err);
-      setChatHistory([]);
+      // setChatHistory([]);
+      setSessions([]);
     } finally {
       setHistoryLoading(false);
     }
@@ -413,36 +371,25 @@ const Chatbot = () => {
     }
   }, []);
 
-  // Helper: format date for grouping
-  const formatHistoryDate = (dateStr) => {
-    if (!dateStr) return "Unknown";
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-
-    if (date.toDateString() === today.toDateString()) return "Today";
-    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
-    if (diffDays < 7) return "Previous 7 Days";
-    if (diffDays < 30) return "Previous 30 Days";
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [conversation]);
 
   // Group history by date
-  const groupedHistory = React.useMemo(() => {
-    const groups = {};
-    chatHistory.forEach((item) => {
-      // const label = formatHistoryDate(item.createdAt || item.timestamp || item.date);
-      const label = formatHistoryDate(
-        item.askedAt || item.createdAt || item.timestamp || item.date
-      );
-      if (!groups[label]) groups[label] = [];
-      groups[label].push(item);
-    });
-    return groups;
-  }, [chatHistory]);
+  // const groupedHistory = React.useMemo(() => {
+  //   const groups = {};
+  //   chatHistory.forEach((item) => {
+  //     // const label = formatHistoryDate(item.createdAt || item.timestamp || item.date);
+  //     const label = formatHistoryDate(
+  //       item.askedAt || item.createdAt || item.timestamp || item.date
+  //     );
+  //     if (!groups[label]) groups[label] = [];
+  //     groups[label].push(item);
+  //   });
+  //   return groups;
+  // }, [chatHistory]);
 
   // useEffect(() => {
   //   const current = placeholders[placeholderIdx];
@@ -495,7 +442,6 @@ const Chatbot = () => {
     e?.preventDefault();
     if (!question.trim()) return;
     setLoading(true);
-    setSubmittedQuestion(question);
     setIsTyping(true);
     setTypingText("");
 
@@ -505,21 +451,29 @@ const Chatbot = () => {
       if (data.sessionId && data.sessionId !== sessionId) {
         setSessionId(data.sessionId);
         sessionStorage.setItem("chatSessionId", data.sessionId);
+         setConversation([]);
       }
 
       const responseResults = data.results || [];
-      setResults(responseResults);
-      setExpandedResultIdx(0);
+      const currentQuestion = question;
+      setQuestion("");
 
-      // ✅ ADD THIS BLOCK (IMPORTANT)
-      const newHistoryItem = {
-        question: question,
-        answer: JSON.stringify(responseResults),
-        askedAt: new Date().toISOString()
-      };
+      setConversation((prev) => [
+        ...prev,
+        {
+          question: currentQuestion,
+          results: responseResults,
+          askedAt: new Date().toISOString(),
+        },
+      ]);
+        await fetchHistory();
+      // const newHistoryItem = {
+      //   question: currentQuestion,
+      //   answer: JSON.stringify(responseResults),
+      //   askedAt: new Date().toISOString(),
+      // };
+      // setChatHistory((prev) => [newHistoryItem, ...prev]);
 
-      setChatHistory(prev => [newHistoryItem, ...prev]); // add on top
-      // Simulate typing effect for the first result summary
       if (responseResults.length > 0 && responseResults[0].summary) {
         const text = responseResults[0].summary;
         let i = 0;
@@ -560,67 +514,54 @@ const Chatbot = () => {
   //     setSidebarOpen(false);
   //   }
   // };
-  const handleHistoryClick = (item) => {
-    const q =
-      item.question ||
-      item.Question ||
-      item.query ||
-      item.text ||
-      "";
+  // const handleHistoryClick = (item) => {
+  //   const q =
+  //     item.question ||
+  //     item.Question ||
+  //     item.query ||
+  //     item.text ||
+  //     "";
 
-    if (q) {
-      setQuestion(q);
-      setSubmittedQuestion(q);
-    }
+  //   if (q) {
+  //     setQuestion(q);
+  //   }
 
-    // 🔥 NEW: Parse answer and show in results panel
-    // if (item.answer || item.Answer) {
-    //   try {
-    //     const parsedResults = JSON.parse(item.answer || item.Answer);
+  //   if (item.answer || item.Answer) {
+  //     try {
+  //       let raw = item.answer || item.Answer;
+  //       const parsedResults =
+  //         typeof raw === "string" ? JSON.parse(raw) : raw;
 
-    //     if (Array.isArray(parsedResults)) {
-    //       setResults(parsedResults);
-    //       setIsTyping(false);
-    //     }
-    //   } catch (err) {
-    //     console.error("Failed to parse history answer", err);
-    //   }
-    // }
+  //       if (Array.isArray(parsedResults)) {
+  //         const normalized = parsedResults.map((r) => ({
+  //           fileName: r.fileName || r.FileName,
+  //           pages: r.pages || r.Pages,
+  //           avgScore: r.avgScore || r.AvgScore,
+  //           summary: r.summary || r.Summary,
+  //         }));
 
-    if (item.answer || item.Answer) {
-      try {
-        let raw = item.answer || item.Answer;
+  //         setConversation((prev) => [
+  //           ...prev,
+  //           {
+  //             question: q,
+  //             results: normalized,
+  //             askedAt: item.askedAt || item.createdAt || new Date().toISOString(),
+  //           },
+  //         ]);
+  //         setIsTyping(false);
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to parse history answer", err);
+  //     }
+  //   }
 
-        // 🔥 handle already parsed case
-        const parsedResults =
-          typeof raw === "string" ? JSON.parse(raw) : raw;
-
-        if (Array.isArray(parsedResults)) {
-          // normalize keys (important)
-          const normalized = parsedResults.map(r => ({
-            fileName: r.fileName || r.FileName,
-            pages: r.pages || r.Pages,
-            avgScore: r.avgScore || r.AvgScore,
-            summary: r.summary || r.Summary
-          }));
-
-          setResults(normalized);
-          setExpandedResultIdx(0);
-          setIsTyping(false);
-        }
-      } catch (err) {
-        console.error("Failed to parse history answer", err);
-      }
-    }
-
-    // Close sidebar on mobile
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-  };
+  //   if (window.innerWidth < 768) {
+  //     setSidebarOpen(false);
+  //   }
+  // };
 
   return (
-    <div className="chatbot-page">
+    <div className="chatbot-page" style={{ minHeight: '100vh', overflow: 'hidden' }}>
       {/* Sidebar Overlay */}
       {sidebarOpen && <div className="chatbot-sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
 
@@ -632,7 +573,7 @@ const Chatbot = () => {
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            <span>Chat History</span>
+            <span>Recent</span>
           </div>
           <button className="chatbot-sidebar-close" onClick={() => setSidebarOpen(false)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -643,14 +584,14 @@ const Chatbot = () => {
         </div>
 
         <div className="chatbot-sidebar-content" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)' }}>
-          {historyLoading ? (
+          {/* {historyLoading ? (
             <div className="chatbot-sidebar-loading">
               <div className="chatbot-typing-dots">
                 <span></span><span></span><span></span>
               </div>
               <p>Loading history...</p>
             </div>
-          ) : chatHistory.length === 0 ? (
+           ) : sessions.length === 0 ? (
             <div className="chatbot-sidebar-empty">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -658,33 +599,129 @@ const Chatbot = () => {
               <p>No chat history yet</p>
               <span>Your conversations will appear here</span>
             </div>
-          ) : (
-            Object.entries(groupedHistory).map(([dateLabel, items]) => (
-              <div key={dateLabel} className="chatbot-sidebar-group">
-                <div className="chatbot-sidebar-date">{dateLabel}</div>
-                {items.map((item, idx) => (
-                  <button
-                    key={idx}
-                    className="chatbot-sidebar-item"
-                    onClick={() => handleHistoryClick(item)}
-                    title={item.question || item.query || item.text || ""}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    <span className="chatbot-sidebar-item-text">
-                      {item.question || item.query || item.text || "Untitled"}
-                    </span>
-                  </button>
-                ))}
-              </div>
+           ) : (
+            // Object.entries(groupedHistory).map(([dateLabel, items]) => (
+            //   <div key={dateLabel} className="chatbot-sidebar-group">
+            //     <div className="chatbot-sidebar-date">{dateLabel}</div>
+            //     {items.map((item, idx) => (
+            //       <button
+            //         key={idx}
+            //         className="chatbot-sidebar-item"
+            //         onClick={() => handleHistoryClick(item)}
+            //         title={item.question || item.query || item.text || ""}
+            //       >
+            //         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            //           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            //         </svg>
+            //         <span className="chatbot-sidebar-item-text">
+            //           {item.question || item.query || item.text || "Untitled"}
+            //         </span>
+            //       </button>
+            //     ))}
+            //   </div>
+            // ))
+            {sessions.length === 0 ? (
+            <div className="chatbot-sidebar-empty">
+              <p>No chat history yet</p>
+            </div>
+            ) : (
+            sessions.map((session) => (
+              <button
+                key={session.sessionId}
+                className={`chatbot-sidebar-item ${session.sessionId === sessionId ? "active" : ""}`}
+                onClick={() => {
+                  setSessionId(session.sessionId);
+                  sessionStorage.setItem("chatSessionId", session.sessionId);
+
+                  // 🔥 LOAD FULL CHAT
+                  const parsedConversation = session.messages.map((msg) => {
+                    let parsedResults = [];
+
+                    try {
+                      parsedResults =
+                        typeof msg.answer === "string"
+                          ? JSON.parse(msg.answer)
+                          : msg.answer;
+                    } catch {}
+
+                    return {
+                      question: msg.question,
+                      results: parsedResults,
+                      askedAt: msg.askedAt,
+                    };
+                  });
+
+                  setConversation(parsedConversation);
+
+                  // mobile UX
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false);
+                  }
+                }}
+              >
+                <span className="chatbot-sidebar-item-text">
+                  {session.title || "New Chat"}
+                </span>
+              </button>
             ))
+          )} */}
+          {historyLoading ? (
+  <div className="chatbot-sidebar-loading">
+    <div className="chatbot-typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p>Loading history...</p>
+  </div>
+) : sessions.length === 0 ? (
+  <div className="chatbot-sidebar-empty">
+    <p>No chat history yet</p>
+  </div>
+) : (
+  sessions.map((session) => (
+    <button
+      key={session.sessionId}
+      className={`chatbot-sidebar-item ${session.sessionId === sessionId ? "active" : ""}`}
+      onClick={() => {
+        setSessionId(session.sessionId);
+        sessionStorage.setItem("chatSessionId", session.sessionId);
+
+        const parsedConversation = session.messages.map((msg) => {
+          let parsedResults = [];
+          try {
+            parsedResults =
+              typeof msg.answer === "string"
+                ? JSON.parse(msg.answer)
+                : msg.answer;
+          } catch {
+            // ignore parse errors
+          }
+
+          return {
+            question: msg.question,
+            results: parsedResults,
+            askedAt: msg.askedAt,
+          };
+        });
+
+        setConversation(parsedConversation);
+
+        if (window.innerWidth < 768) {
+          setSidebarOpen(false);
+        }
+      }}
+    >
+      <span className="chatbot-sidebar-item-text">
+        {session.title || "New Chat"}
+      </span>
+    </button>
+  ))
+
           )}
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="chatbot-main">
+      <div className="chatbot-main" style={{ height: '100vh', position: 'relative' }}>
         {/* Header */}
         <div className="chatbot-header">
           <button className="chatbot-sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle chat history">
@@ -704,128 +741,112 @@ const Chatbot = () => {
             <h1>SmartAI Assistant</h1>
             <p>Ask questions about your documents and get instant answers</p>
           </div>
-          <div className="chatbot-header-buttons">
-            <button onClick={() => setShowQuestionPanel(!showQuestionPanel)}>
-              {showQuestionPanel ? "Close Question Panel" : "Open Question Panel"}
-            </button>
-            <button onClick={() => setShowResultsPanel(!showResultsPanel)}>
-              {showResultsPanel ? "Close Results Panel" : "Open Results Panel"}
-            </button>
+        </div>
+
+        <div className="chatbot-chat-area" style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', padding: '24px 20px 140px' }}>
+          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            {conversation.length === 0 && !loading ? (
+              <div className="chatbot-empty-chat">
+                <p>Your chat will appear here.</p>
+                <span>Ask a question to begin the conversation.</span>
+              </div>
+            ) : conversation.length === 0 && loading ? (
+              <div className="chatbot-loading">
+                <div className="chatbot-typing-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <p>Searching documents...</p>
+              </div>
+            ) : (
+              conversation.map((item, msgIndex) => (
+                <div key={msgIndex} className="chatbot-message-block">
+                  <div className="chatbot-message-header">
+                    <span className="chatbot-message-label" style={{display: "flex",justifyContent: "flex-end"}}>Q{msgIndex + 1}</span>
+                    <div className="chatbot-message-text" style={{display: "flex",justifyContent: "flex-end"}}>{item.question}</div>
+                  </div>
+                  <div className="chatbot-answer-block">
+                    <div className="chatbot-answer-meta">
+                      <span className="chatbot-answer-label">Answer</span>
+                      <span className="chatbot-answer-time">{new Date(item.askedAt).toLocaleString()}</span>
+                    </div>
+                    <div className="chatbot-answer-divider" />
+                    <div className="chatbot-answer-cards">
+                      {item.results.map((r, i) => {
+                        const key = `${msgIndex}-${i}`;
+                        return (
+                          <ResultCard
+                            key={key}
+                            r={r}
+                            i={i}
+                            isTyping={isTyping && msgIndex === conversation.length - 1}
+                            typingText={typingText}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Two-panel layout */}
-        <div className="chatbot-panels">
-          {/* Question Panel */}
-          {showQuestionPanel && (
-            <div className="chatbot-panel chatbot-question-panel">
-              <div className="chatbot-panel-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                Ask a Question
-              </div>
-
-              <form className="chatbot-input-area" onSubmit={ask}>
-                <div className="chatbot-input-wrap">
-                  <textarea
-                    ref={inputRef}
-                    className="chatbot-textarea"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    placeholder={placeholder + "|"}
-                    rows={4}
-                    disabled={loading}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        ask();
-                      }
-                    }}
-                  />
-                  <div className="chatbot-input-hint" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Press Enter to send, Shift+Enter for new line</span>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', pointerEvents: 'auto' }}>
-                      <input
-                        type="checkbox"
-                        checked={includeHistory}
-                        onChange={(e) => setIncludeHistory(e.target.checked)}
-                        disabled={loading}
-                      />
-                      Include Conversation Context
-                    </label>
-                  </div>
-                </div>
-                <button type="submit" className="chatbot-send-btn" disabled={loading || !question.trim()}>
-                  {loading ? (
-                    <><span className="btn-spinner"></span> Searching...</>
-                  ) : (
-                    <>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                      Ask
-                    </>
-                  )}
-                </button>
-              </form>
-
-              {/* Recent/suggestion chips */}
-              <div className="chatbot-suggestions">
-                <span className="chatbot-suggestion-label">Try:</span>
-                {["How to fix blurred print issues in the printer?", "How to resolve blank or white pages issue?", "How to troubleshoot Ghost images check?", "What are the steps for Dark print check?"].map((s, i) => (
-                  <button
-                    key={i}
-                    className="chatbot-chip"
-                    onClick={() => { setQuestion(s); inputRef.current?.focus(); }}
-                    disabled={loading}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+        <div className="chatbot-input-area" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10, background: '#0f1117db', padding: '1rem 20px 1rem',width: '100%' }}>
+          <form onSubmit={ask} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '100%', margin: '0 auto' }}>
+            <div className="chatbot-input-wrap" style={{ position: 'relative' }}>
+              <textarea
+                ref={inputRef}
+                className="chatbot-textarea"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder={placeholder + "|"}
+                rows={3}
+                disabled={loading}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    ask();
+                  }
+                }}
+                style={{ paddingRight: '3rem' }}
+              />
+              <button
+                type="submit"
+                disabled={loading || !question.trim()}
+                style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  bottom: '0.75rem',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#4b5563'
+                }}
+                aria-label="Send question"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                  <path d="M5 12h14" />
+                  <path d="M13 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-          )}
-
-          {/* Results Panel */}
-          {showResultsPanel && (
-            <div className="chatbot-panel chatbot-results-panel" ref={resultsRef}>
-              <div className="chatbot-panel-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
-                Results
-              </div>
-
-              {results.length === 0 && !loading ? (
-                <div className="chatbot-empty">
-                  <div className="chatbot-empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                  </div>
-                  <p>Your answers will appear here</p>
-                  <span>Ask a question to get started</span>
-                </div>
-              ) : loading ? (
-                <div className="chatbot-loading">
-                  <div className="chatbot-typing-dots">
-                    <span></span><span></span><span></span>
-                  </div>
-                  <p>Searching documents...</p>
-                </div>
-              ) : (
-                <div className="chatbot-results-list">
-                  {results.map((r, i) => (
-                    <ResultCard
-                      key={i}
-                      r={r}
-                      i={i}
-                      isTyping={isTyping}
-                      typingText={typingText}
-                      question={submittedQuestion}
-                      isExpanded={expandedResultIdx === i}
-                      onToggle={() => setExpandedResultIdx(expandedResultIdx === i ? -1 : i)}
-                    />
-                  ))}
-                </div>
-              )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Press Enter to send, Shift+Enter for new line</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={includeHistory}
+                  onChange={(e) => setIncludeHistory(e.target.checked)}
+                  disabled={loading}
+                />
+                Include Conversation Context
+              </label>
             </div>
-          )}
+          </form>
         </div>
       </div>{/* end chatbot-main */}
     </div>
