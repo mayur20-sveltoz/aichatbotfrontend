@@ -13,7 +13,17 @@ const Users = () => {
   const [messageText, setMessageText] = useState("");
 
   const API = `${API_BASE_URL}/api/AdminAPI`;
+  //Pagination of users
+  const [currentPage, setCurrentPage] = useState(1);
 
+  const usersPerPage = 3;
+
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+
+  const totalPages = Math.ceil(users.length / usersPerPage);
   // const loadUsers = async () => {
   //   try {
   //     const token = sessionStorage.getItem("token");
@@ -233,74 +243,99 @@ const Users = () => {
       </div>
 
       {/* Users Table */}
-      <div className="users-table-wrap">
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Username</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Activate / Deactivate</th>
-              <th>Reset Password</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr><td colSpan="6" className="users-empty">No users found</td></tr>
-            ) : (
-              users.map((u, i) => (
-                <tr key={u.id || i}>
-                  <td>{i + 1}</td>
-                  <td>
-                    <div className="users-cell-user">
-                      <div className="users-avatar">{(u.username || "?")[0].toUpperCase()}</div>
-                      {u.username}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`users-badge users-badge-${(u.role || "user").toLowerCase()}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`users-status ${u.isActive ? "users-status-active" : "users-status-inactive"}`}>
-                      <span className="users-status-dot"></span>
-                      {u.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td>
-                    {u.isActive ? (
-                      <button className="users-action-btn users-action-deactivate" onClick={() => deactivateUser(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15" /><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
-                        Deactivate
-                      </button>
-                    ) : (
-                      <button className="users-action-btn users-action-activate" onClick={() => activateUser(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                        Activate
-                      </button>
-                    )}
-                  </td>
-                  <td>
-                    <div className="users-reset-inline">
-                      <input
-                        type="password"
-                        placeholder="New Password"
-                        value={passwords[u.id] || ""}
-                        onChange={(e) => handlePasswordChange(u.id, e.target.value)}
-                      />
-                      <button className="users-action-btn users-action-reset" onClick={() => resetPassword(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                        Reset
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="users-table-wrap1">
+        <div className="users-table-scroll">
+          <table className="users-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Activate / Deactivate</th>
+                <th>Reset Password</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr><td colSpan="6" className="users-empty">No users found</td></tr>
+              ) : (
+                currentUsers.map((u, i) => (
+                  <tr key={u.id || i}>
+                    <td>{indexOfFirstUser + i + 1}</td>
+                    <td>
+                      <div className="users-cell-user">
+                        <div className="users-avatar">{(u.username || "?")[0].toUpperCase()}</div>
+                        {u.username}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`users-badge users-badge-${(u.role || "user").toLowerCase()}`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`users-status ${u.isActive ? "users-status-active" : "users-status-inactive"}`}>
+                        <span className="users-status-dot"></span>
+                        {u.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td>
+                      {u.isActive ? (
+                        <button className="users-action-btn users-action-deactivate" onClick={() => deactivateUser(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64A9 9 0 0 1 20.77 15" /><path d="M6.16 6.16a9 9 0 1 0 12.68 12.68" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+                          Deactivate
+                        </button>
+                      ) : (
+                        <button className="users-action-btn users-action-activate" onClick={() => activateUser(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                          Activate
+                        </button>
+                      )}
+                    </td>
+                    <td>
+                      <div className="users-reset-inline">
+                        <input
+                          type="password"
+                          placeholder="New Password"
+                          value={passwords[u.id] || ""}
+                          onChange={(e) => handlePasswordChange(u.id, e.target.value)}
+                        />
+                        <button className="users-action-btn users-action-reset" onClick={() => resetPassword(u.id)} style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580" }}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                          Reset
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {users.length > usersPerPage && (
+          <div className="users-pagination">
+
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Previous
+            </button>
+
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </button>
+
+          </div>
+        )}
       </div>
 
       {/* ✅ Message Popup Overlay */}

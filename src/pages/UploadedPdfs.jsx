@@ -628,7 +628,7 @@ const UploadedPdfs = () => {
       </div>
 
       {/* Table */}
-      <div className="users-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div className="users-table-wrap">
         <table className="users-table">
           <thead>
             <tr>
