@@ -10,6 +10,7 @@ const Navbar = ({ user }) => {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Sync Multiple PDF states
   const [syncQueue, setSyncQueue] = useState([]);
@@ -235,34 +236,57 @@ const Navbar = ({ user }) => {
   ];
 
   return (
-    <nav className="app-navbar">
-      <div className="navbar-brand">
-        <div className="navbar-logo">
-          {/* <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" />
-            <path d="M2 17l10 5 10-5" />
-            <path d="M2 12l10 5 10-5" />
-          </svg> */}
+    <>
+      {/* Mobile top bar */}
+      <div className="mobile-topbar">
+        <button className="sidebar-hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <div className="mobile-topbar-logo">
           <img src={BBLogo} alt="SmartAI Logo" className="logo-img" />
         </div>
       </div>
 
-      <div className="navbar-links">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`navbar-link ${isActive(item.path) ? "navbar-link-active" : ""}`}
-          >
-            <span className="navbar-link-icon">{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
-      </div>
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
 
-      <div className="navbar-right">
+      {/* Sidebar */}
+      <aside className={`app-sidebar${sidebarOpen ? " sidebar-open" : ""}`}>
+        {/* Header: Logo + Close */}
+        <div className="sidebar-header">
+          <div className="sidebar-logo">
+            <img src={BBLogo} alt="SmartAI Logo" className="logo-img" />
+          </div>
+          <button className="sidebar-close" onClick={() => setSidebarOpen(false)} aria-label="Close menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Nav Links */}
+        <nav className="sidebar-nav">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`sidebar-link${isActive(item.path) ? " sidebar-link-active" : ""}`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <span className="sidebar-link-icon">{item.icon}</span>
+              <span className="sidebar-link-label">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* Admin Actions */}
         {user?.role === "Admin" && (
-          <div className="navbar-admin-actions desktop-admin-actions" style={{ display: "flex", gap: "1rem", marginRight: "1rem", alignItems: "center" }}>
+          <div className="sidebar-actions">
+            <span className="sidebar-section-label">Admin Tools</span>
             <input
               type="file"
               accept=".pdf"
@@ -270,68 +294,41 @@ const Navbar = ({ user }) => {
               style={{ display: "none" }}
               onChange={handleFileChange}
             />
-            {/* <button
-              className="navbar-action-btn"
-              onClick={handleUploadPdfClick}
-              disabled={isUploading || isSyncing}
-              style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", padding: "0.4rem 0.8rem", borderRadius: "5px", fontSize: "0.875rem", cursor: (isUploading || isSyncing) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem", border: "none", fontWeight: "600", opacity: isUploading ? 0.7 : 1 }}
-            >
-              {isUploading ? (
-                <><span className="btn-spinner" style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderRadius: "50%", borderTopColor: "#fff", animation: "spin 1s ease-in-out infinite", display: "inline-block" }}></span> <span className="action-btn-text">Uploading...</span></>
-              ) : (
-                <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg> <span className="action-btn-text">Upload PDF</span></>
-              )}
-            </button> */}
             <button
-              className="navbar-action-btn"
+              className="sidebar-action-btn"
               onClick={() => setShowSyncConfirmModal(true)}
               disabled={isUploading || isSyncing}
-              style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", padding: "0.4rem 0.8rem", borderRadius: "5px", fontSize: "0.875rem", cursor: (isUploading || isSyncing) ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "0.5rem", border: "none", fontWeight: "600", opacity: isSyncing ? 0.7 : 1 }}
             >
               {isSyncing ? (
-                <><span className="btn-spinner" style={{ width: "14px", height: "14px", border: "2px solid rgba(255,255,255,0.3)", borderRadius: "50%", borderTopColor: "#fff", animation: "spin 1s ease-in-out infinite", display: "inline-block" }}></span> <span className="action-btn-text">Syncing...</span></>
+                <><span className="btn-spinner"></span> Syncing...</>
               ) : (
-                <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" /></svg> <span className="action-btn-text">Sync JSONL</span></>
+                <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" /></svg> Sync JSONL</>
               )}
             </button>
-            <style>{`
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-              @media (max-width: 768px) {
-                /* Hide username and button labels on mobile */
-                .navbar-user { display: none !important; }
-                .action-btn-text { display: none; }
-
-                /* Position desktop admin actions to top left */
-                .desktop-admin-actions {
-                  position: absolute;
-                  left: 10px;
-                  top: 10px;
-                  margin-right: 0 !important;
-                }
-                .navbar-action-btn { padding: 0.5rem !important; margin: 0 !important; }
-
-                /* Center the logo and keep logout right aligned */
-                .app-navbar { position: relative; padding-top: 10px; }
-                .navbar-brand { position: absolute; left: 50%; top: 15px; transform: translateX(-50%); pointer-events: none; }
-                .navbar-right { width: 100%; justify-content: flex-end; }
-              }
-            `}</style>
           </div>
         )}
-        <div className="navbar-user">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-          </svg>
-          <span>{user?.username}</span>
+
+        {/* Footer: User + Logout */}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar">
+              {user?.username?.charAt(0)?.toUpperCase()}
+            </div>
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">{user?.username}</span>
+              <span className="sidebar-user-role">{user?.role}</span>
+            </div>
+          </div>
+          <button className="sidebar-logout" onClick={logout}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Logout
+          </button>
         </div>
-        <button className="navbar-logout" onClick={logout}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Logout
-        </button>
-      </div>
-        {/* Confirmation Modal Overlay */}
+      </aside>
+
+      {/* Confirmation Modal Overlay */}
       {showConfirmModal && syncQueue[currentSyncIndex] && (() => {
         const currentItem = syncQueue[currentSyncIndex];
         const mediumPages = currentItem.mediumPages || [];
@@ -661,7 +658,7 @@ const Navbar = ({ user }) => {
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 };
 

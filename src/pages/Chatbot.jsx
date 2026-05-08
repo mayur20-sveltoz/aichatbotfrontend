@@ -70,7 +70,7 @@ const ResultCard = ({ r, i, isTyping, typingText }) => {
   (r.fileName || r.FileName) !== "No Match" &&
   !!displayedSummary &&
   displayedSummary.trim() !==
-    "No relevant answer found in the manual.";
+    "Try rephrasing your question or using more specific keywords.";
   // const highlightAnswerInPdf = useCallback(() => {
 
   //   setTimeout(() => {
@@ -844,7 +844,7 @@ setQuestion("");
             {/* EMPTY STATE */}
             {conversation.length === 0 && !loading && (
               <div className="chatbot-empty-chat">
-                <p>Your chat will appear here.</p>
+                <p>How can I assist you today?</p>
                 <span>Ask a question to begin the conversation.</span>
               </div>
             )}
@@ -963,7 +963,7 @@ setQuestion("");
                     <span></span>
                   </div>
 
-                  <p>Searching documents...</p>
+                  <p>Searching</p>
 
                 </div>
 

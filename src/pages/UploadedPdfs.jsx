@@ -254,7 +254,7 @@ const UploadedPdfs = () => {
   );
 
   return (
-    <div className="users-page">
+    <div className="lib-page">
       {/* Hidden File Input */}
       <input
         type="file"
@@ -558,23 +558,18 @@ const UploadedPdfs = () => {
         </div>
       )}
       {/* Header */}
-      <div className="users-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem' }}>
-        <div>
-          <h1 style={{ marginBottom: '0.3rem' }}>Library</h1>
+      <div className="lib-header">
+        <div className="lib-header-text">
+          <h1>Library</h1>
           <p>View all PDFs successfully uploaded to the system</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
-            className="users-add-btn"
-            onClick={handleUploadPdfClick}
-            disabled={isUploading}
-            style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", height: "40px" }}
-          >
+        <div className="lib-header-actions">
+          <button className="lib-upload-btn" onClick={handleUploadPdfClick} disabled={isUploading}>
             {isUploading ? (
-              <><span className="btn-spinner"></span> Uploading...</>
+              <><span className="btn-spinner" /> Uploading...</>
             ) : (
               <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
@@ -584,17 +579,12 @@ const UploadedPdfs = () => {
             )}
           </button>
 
-          <button
-            className="users-add-btn"
-            onClick={loadPdfs}
-            style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", height: "40px" }}
-            disabled={loading}
-          >
+          <button className="lib-refresh-btn" onClick={loadPdfs} disabled={loading}>
             {loading ? (
-              <><span className="btn-spinner"></span> Refreshing...</>
+              <><span className="btn-spinner" /> Refreshing...</>
             ) : (
               <>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" />
                 </svg>
                 Refresh
@@ -605,146 +595,122 @@ const UploadedPdfs = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="users-search-bar" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ minWidth: 'fit-content' }}>
-          <span style={{ fontSize: '1rem', fontWeight: '500', color: '#4b5563' }}>Manage Documents</span>
-        </div>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '320px', flex: '1 1 auto' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" width="18" height="18" style={{ position: 'absolute', left: '12px', top: '10px' }}>
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      <div className="lib-search-row">
+        <div className="lib-search-wrap">
+          <svg className="lib-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input
+            className="lib-search"
             type="text"
             placeholder="Search PDFs by name..."
             value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{ width: '100%', color: '#000', padding: '0.6rem 1rem 0.6rem 2.5rem', borderRadius: '8px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.95rem' }}
+            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           />
+          {searchTerm && (
+            <button className="lib-search-clear" onClick={() => { setSearchTerm(""); setCurrentPage(1); }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
         </div>
+        <span className="lib-results-count">{filteredPdfs.length} file{filteredPdfs.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* Table */}
-      <div className="users-table-wrap">
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>PDF Name</th>
-              <th>Size</th>
-              <th>Pages</th>
-              {/* <th>Status</th> */}
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentPdfs.length === 0 ? (
+      <div className="lib-table-wrap">
+        <div className="lib-table-scroll">
+          <table className="lib-table">
+            <thead>
               <tr>
-                <td colSpan="6" className="users-empty">
-                  {loading ? "Loading..." : "No PDFs found matching your criteria"}
-                </td>
+                <th>#</th>
+                <th>PDF Name</th>
+                <th>Size</th>
+                <th>Pages</th>
+                <th>Actions</th>
               </tr>
-            ) : (
-              currentPdfs.map((pdf, i) => {
-                const globalIndex = (currentPage - 1) * itemsPerPage + i + 1;
-                const fileName = typeof pdf === "string" ? pdf : (pdf.fileName || pdf.FileName || pdf.name || pdf.Name);
-                const size = typeof pdf !== "string" && (pdf.size || pdf.Size) ? (pdf.size || pdf.Size) : "-";
-                const pages = typeof pdf !== "string" && (pdf.pages || pdf.Pages) ? (pdf.pages || pdf.Pages) : "-";
-
-                return (
-                  <tr key={i}>
-                    <td>{globalIndex}</td>
-                    <td>
-                      <div className="users-cell-user">
-                        <div
-                          className="users-avatar"
-                          style={{ background: "#3b82f6", borderRadius: "8px", minWidth: "32px", height: "32px" }}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="16" height="16">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                          </svg>
+            </thead>
+            <tbody>
+              {currentPdfs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="lib-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <span>{loading ? "Loading..." : searchTerm ? "No PDFs match your search" : "No PDFs found"}</span>
+                  </td>
+                </tr>
+              ) : (
+                currentPdfs.map((pdf, i) => {
+                  const globalIndex = (currentPage - 1) * itemsPerPage + i + 1;
+                  const fileName = typeof pdf === "string" ? pdf : (pdf.fileName || pdf.FileName || pdf.name || pdf.Name);
+                  const size = typeof pdf !== "string" && (pdf.size || pdf.Size) ? (pdf.size || pdf.Size) : "-";
+                  const pages = typeof pdf !== "string" && (pdf.pages || pdf.Pages) ? (pdf.pages || pdf.Pages) : "-";
+                  return (
+                    <tr key={i}>
+                      <td className="lib-td-num">{globalIndex}</td>
+                      <td>
+                        <div className="lib-file-cell">
+                          <div className="lib-file-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                          </div>
+                          <span className="lib-file-name">{fileName}</span>
                         </div>
-                        <span style={{ whiteSpace: 'nowrap' }}>{fileName}</span>
-                      </div>
-                    </td>
-                    <td>{size}</td>
-                    <td>{pages}</td>
-                    {/* <td>
-                      <span className="users-status users-status-active">
-                        <span className="users-status-dot"></span>
-                        Available
-                      </span>
-                    </td> */}
-                    <td style={{ minWidth: '190px' }}>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button
-                          className="users-action-btn"
-                          onClick={() => handleShareClick(fileName)}
-                          style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginRight: '4px' }}>
-                            <circle cx="18" cy="5" r="3" />
-                            <circle cx="6" cy="12" r="3" />
-                            <circle cx="18" cy="19" r="3" />
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                          </svg>
-                          Share
-                        </button>
-                        <button
-                          className="users-action-btn"
-                          onClick={() => handleOpenClick(fileName)}
-                          style={{ backgroundColor: "#E06580", color: "#fff", borderColor: "#E06580", padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginRight: '4px' }}>
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                          Open
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                      </td>
+                      <td>{size}</td>
+                      <td>{pages}</td>
+                      <td>
+                        <div className="lib-actions-cell">
+                          <button className="lib-action-btn lib-action-share" onClick={() => handleShareClick(fileName)}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="18" cy="5" r="3"/>
+                              <circle cx="6" cy="12" r="3"/>
+                              <circle cx="18" cy="19" r="3"/>
+                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                            Share
+                          </button>
+                          <button className="lib-action-btn lib-action-open" onClick={() => handleOpenClick(fileName)}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Open
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredPdfs.length)} of {filteredPdfs.length} entries
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: currentPage === 1 ? '1px solid #E06580' : '1px solid #E06580', background: currentPage === 1 ? '#E06580' : '#E06580', color: currentPage === 1 ? '#fff' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: '500' }}
-            >
+        {totalPages > 1 && (
+          <div className="lib-pagination">
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
               Previous
             </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', padding: '0 0.5rem', fontWeight: '500', color: '#E06580', fontSize: '0.875rem' }}>
-              Page {currentPage} of {totalPages}
-            </div>
-
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: currentPage === totalPages ? '1px solid #E06580' : '1px solid #E06580', background: currentPage === totalPages ? '#E06580' : '#E06580', color: currentPage === totalPages ? '#fff' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '0.875rem', fontWeight: '500' }}
-            >
+            <span>Page {currentPage} of {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
               Next
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
     </div>
   );
