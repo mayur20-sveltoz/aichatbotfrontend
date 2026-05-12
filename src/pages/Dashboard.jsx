@@ -92,10 +92,10 @@ const Dashboard = () => {
           <h1>{greeting()}, {username}!</h1>
           <p>Here's an overview of your SmartAI administration panel.</p>
         </div>
-        <div className="db-hero-badge">
+        {/* <div className="db-hero-badge">
           <span className="db-status-dot" />
           System Online
-        </div>
+        </div> */}
       </div>
 
       {/* ── Stat Cards ── */}

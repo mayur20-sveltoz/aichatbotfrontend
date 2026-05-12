@@ -20,7 +20,7 @@ const UploadedPdfs = () => {
   // Search & Pagination State
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 7;
 
   // Confirmation Modal State (TOC Processing)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -598,7 +598,7 @@ const UploadedPdfs = () => {
       <div className="lib-search-row">
         <div className="lib-search-wrap">
           <svg className="lib-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             className="lib-search"
@@ -610,7 +610,7 @@ const UploadedPdfs = () => {
           {searchTerm && (
             <button className="lib-search-clear" onClick={() => { setSearchTerm(""); setCurrentPage(1); }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           )}
@@ -636,8 +636,8 @@ const UploadedPdfs = () => {
                 <tr>
                   <td colSpan="5" className="lib-empty">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
                     </svg>
                     <span>{loading ? "Loading..." : searchTerm ? "No PDFs match your search" : "No PDFs found"}</span>
                   </td>
@@ -655,8 +655,8 @@ const UploadedPdfs = () => {
                         <div className="lib-file-cell">
                           <div className="lib-file-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14 2 14 8 20 8"/>
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
                             </svg>
                           </div>
                           <span className="lib-file-name">{fileName}</span>
@@ -668,18 +668,18 @@ const UploadedPdfs = () => {
                         <div className="lib-actions-cell">
                           <button className="lib-action-btn lib-action-share" onClick={() => handleShareClick(fileName)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="18" cy="5" r="3"/>
-                              <circle cx="6" cy="12" r="3"/>
-                              <circle cx="18" cy="19" r="3"/>
-                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                              <circle cx="18" cy="5" r="3" />
+                              <circle cx="6" cy="12" r="3" />
+                              <circle cx="18" cy="19" r="3" />
+                              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                             </svg>
                             Share
                           </button>
                           <button className="lib-action-btn lib-action-open" onClick={() => handleOpenClick(fileName)}>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                              <circle cx="12" cy="12" r="3"/>
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
                             </svg>
                             Open
                           </button>
@@ -693,7 +693,7 @@ const UploadedPdfs = () => {
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {/* {totalPages > 1 && (
           <div className="lib-pagination">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -708,6 +708,47 @@ const UploadedPdfs = () => {
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
+          </div>
+        )} */}
+        {totalPages > 1 && (
+          <div className="lib-pagination">
+
+            {/* Previous */}
+            <button
+              className="lib-page-nav"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+            >
+              ← Previous
+            </button>
+
+            {/* Page Numbers */}
+            <div className="lib-page-numbers">
+              {Array.from({ length: totalPages }, (_, index) => {
+                const page = index + 1;
+
+                return (
+                  <button
+                    key={page}
+                    className={`lib-page-btn ${currentPage === page ? "active" : ""
+                      }`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next */}
+            <button
+              className="lib-page-nav"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+            >
+              Next →
+            </button>
+
           </div>
         )}
       </div>

@@ -8,7 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
 
   const login = async (e) => {
     e.preventDefault();
@@ -89,13 +89,14 @@ const Login = () => {
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onBlur={() => setUsername(username.trim())}
               required
             />
           </div>
         </div>
 
         {/* Password */}
-        <div className="login-field">
+        {/* <div className="login-field">
           <label htmlFor="login-password">Password</label>
           <div className="login-input-wrap">
             <svg className="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -107,9 +108,86 @@ const Login = () => {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
               required
             />
+          </div>
+        </div> */}
+        {/* Password */}
+        <div className="login-field">
+          <label htmlFor="login-password">Password</label>
+
+          <div className="login-input-wrap">
+
+            {/* Lock Icon */}
+            <svg
+              className="login-input-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+
+            {/* Password Input */}
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => setPassword(password.trim())}
+              required
+            />
+
+            {/* Eye Icon */}
+            <button
+              type="button"
+              className="login-eye-btn"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+
+                // Eye OFF
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.73-1.61 1.79-3.03 3.06-4.18" />
+                  <path d="M10.58 10.58a2 2 0 1 0 2.83 2.83" />
+                  <path d="M1 1l22 22" />
+                  <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8a10.97 10.97 0 0 1-4.12 5.76" />
+                </svg>
+
+              ) : (
+
+                // Eye ON
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+
+              )}
+            </button>
           </div>
         </div>
 
