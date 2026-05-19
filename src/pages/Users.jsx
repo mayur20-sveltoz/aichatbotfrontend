@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import API_BASE_URL from "../apiroute/apiConfig";
 import Select from "react-select";
@@ -15,6 +15,8 @@ const Users = () => {
   const [modalText, setModalText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const addPanelRef = useRef(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const USERS_PER_PAGE = 8;
   const API = `${API_BASE_URL}/api/AdminAPI`;
@@ -38,7 +40,18 @@ const Users = () => {
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   const notify = (msg) => { setModalText(msg); setShowModal(true); };
+  const resetUserForm = () => {
+    setNewUser({
+      username: "",
+      password: "",
+      role: ""
+    });
 
+    setIsEditMode(false);
+    setEditingUserId(null);
+    setShowAddPanel(false);
+    setAddLoading(false);
+  };
   const activateUser = async (id) => {
     try {
       await axios.post(`${API}/activate/${id}`, {}, {
@@ -58,10 +71,18 @@ const Users = () => {
 
     setNewUser({
       username: user.username || "",
-      password: "",
+      password: user.password || "",
       role: user.role || ""
     });
-  }; const deleteUser = async (id) => {
+    // AUTO SCROLL
+    setTimeout(() => {
+      addPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 100);
+  };
+  const deleteUser = async (id) => {
 
     try {
 
@@ -376,6 +397,7 @@ const Users = () => {
     } catch (err) {
 
       notify(
+        err.response?.data?.error ||
         err.response?.data?.message ||
         "Failed to update user"
       );
@@ -402,12 +424,24 @@ const Users = () => {
     <div className="um-page">
 
       {/* ── Header ── */}
-      <div className="um-header">
+      {/* <div className="um-header">
         <div className="um-header-text">
           <h1>User Management</h1>
           <p>Manage all users, roles, and access permissions</p>
         </div>
-        <button className="um-add-btn" onClick={() => setShowAddPanel(v => !v)}>
+        <button
+          className="um-add-btn"
+          onClick={() => {
+            if (showAddPanel) {
+              resetUserForm();
+            } else {
+              setNewUser({ username: "", password: "", role: "" });
+              setIsEditMode(false);
+              setEditingUserId(null);
+              setShowAddPanel(true);
+            }
+          }}
+        >
           {showAddPanel ? (
             <>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -424,6 +458,31 @@ const Users = () => {
             </>
           )}
         </button>
+      </div> */}
+      {/* ── Header ── */}
+      <div className="um-header">
+        <div className="um-header-text">
+          <h1>User Management</h1>
+          <p>Manage all users, roles, and access permissions</p>
+        </div>
+
+        {!showAddPanel && (
+          <button
+            className="um-add-btn"
+            onClick={() => {
+              setNewUser({ username: "", password: "", role: "" });
+              setIsEditMode(false);
+              setEditingUserId(null);
+              setShowAddPanel(true);
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add User
+          </button>
+        )}
       </div>
 
       {/* ── Stats Row ── */}
@@ -465,14 +524,67 @@ const Users = () => {
               </div>
               <div className="um-field">
                 <label>Password</label>
-                <input type="password" placeholder={
-                  isEditMode
-                    ? "Leave blank to keep old password"
-                    : "Enter password"
-                }
-                  value={newUser.password}
-                  onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                  required={!isEditMode} />
+
+                <div className="um-password-wrap">
+
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder={
+                      isEditMode
+                        ? "Leave blank to keep old password"
+                        : "Enter password"
+                    }
+                    value={newUser.password}
+                    onChange={e =>
+                      setNewUser({
+                        ...newUser,
+                        password: e.target.value
+                      })
+                    }
+                    required={!isEditMode}
+                  />
+
+                  <button
+                    type="button"
+                    className="um-password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      // EYE OFF
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.92-2.19 2.36-4.08 4.18-5.5" />
+                        <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
+                        <path d="M9.88 5.09A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8a11.64 11.64 0 0 1-1.67 2.68" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </svg>
+                    ) : (
+                      // EYE
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+
+                </div>
               </div>
               <div className="um-field um-role-field">
                 <label>Role</label>
@@ -495,8 +607,13 @@ const Users = () => {
               </div>
             </div>
             <div className="um-add-actions">
-              {/* <button type="button" className="um-btn-ghost"
-                onClick={() => setShowAddPanel(false)}>Cancel</button> */}
+              <button
+                type="button"
+                className="um-btn-ghost"
+                onClick={resetUserForm}
+              >
+                Cancel
+              </button>
               <button type="submit" className="um-btn-primary" disabled={addLoading}>
                 {addLoading
                   ? <><span className="btn-spinner" /> Adding...</>
